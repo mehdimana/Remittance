@@ -1,3 +1,4 @@
+
 pragma solidity ^0.4.19;
 
 contract Remittance  {
@@ -21,7 +22,7 @@ contract Remittance  {
     /**
      * allow to withdraw fonds if the password hash matches a known hash
      */
-    function withdrawFonds(uint pwd) public returns(bool) {
+    function withdrawFonds(string pwd) public returns(bool) {
         require(msg.sender == exchange); //only carol/exchange can withdraw
         bytes32 hash = keccak256(pwd);
         uint toWithdraw = fonds[hash];
@@ -31,7 +32,8 @@ contract Remittance  {
         return true;
     }
     
-    function calculateHash(bytes pwd) public pure returns(bytes32) {
-        return keccak256("12345678");
-    }
+    // function calculateHash(string pwd) public pure returns(bytes32) {
+    //     return keccak256(pwd);
+    // }
 }
+
