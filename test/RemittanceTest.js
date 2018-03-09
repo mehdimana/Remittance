@@ -30,7 +30,17 @@ contract('Remittance', function(accounts) {
 	    }
 	});
 
-	it("should remit and withdraw properly", () => {
+	it("test hash", () => {
+		var pwd = "12345678";
+		var hash = web3.sha3(pwd)
+		return Remittance.deployed().then( () => {
+			return contract.calculateHash.call(pwd, {from: exchange});
+		}).then(function(hashFromContract) {
+			console.log(hash + "----" + hashFromContract);
+		});
+	})
+
+	if("should remit and withdraw properly", () => {
 		var pwd = 123456789;
 		var hash = web3.sha3(pwd);
 		return Remittance.deployed().then( () => {

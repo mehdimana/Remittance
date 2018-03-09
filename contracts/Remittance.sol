@@ -31,7 +31,7 @@ contract Remittance  {
         return true;
     }
     
-    // function calculateHash(uint pwd) public pure returns(bytes32) {
-    //     return keccak256(pwd);
-    // }
+    function calculateHash(bytes pwd) public pure returns(bytes32) {
+        return keccak256("12345678");
+    }
 }
