@@ -1,6 +1,8 @@
+var Owned = artifacts.require("./Owned.sol");
 var Remittance = artifacts.require("./Remittance.sol");
 
 module.exports = function(deployer) {
-	var exchangeAddress = 
-  deployer.deploy(Remittance, "0xf17f52151ebef6c7334fad080c5704d77216b732");
+  //deployer.deploy(Owned);	
+  //deployer.link(Owned, Remittance);
+  deployer.deploy(Remittance, { gas: 5000000 });
 };
