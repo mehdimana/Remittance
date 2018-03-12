@@ -75,6 +75,7 @@ const withdraw = function() {
          }).then(txObject => {
           if (txObject.receipt.status === "0x01") {
             $("#status").html("withdrawal successsfuly.");
+            console.log(txObject.logs[0].args);
           } else {
             $("#status").html("error withdrawing.");
             console.error(txObject);
@@ -95,6 +96,7 @@ const createRemittance = function() {
          }).then(txObject => {
           if (txObject.receipt.status === "0x01") {
             $("#status").html("Remittance created successsfuly.");
+            console.log(txObject.logs[0].args);
           } else {
             $("#status").html("error creating remittance.");
             console.error(txObject);

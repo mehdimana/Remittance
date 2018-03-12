@@ -38,6 +38,10 @@ contract('Remittance', function(accounts) {
 				return contractInstance.createRemittance(hash, exchange1, 2, {from: owner, value: 100});
 			}).then(function(txObject) {
 				assert.strictEqual("0x01", txObject.receipt.status);
+				assert.strictEqual("LogRemittance", txObject.logs[0].event);
+				assert.strictEqual(owner, txObject.logs[0].args.sender);
+				assert.strictEqual(exchange1, txObject.logs[0].args.beneficiary);
+				assert.strictEqual(100, txObject.logs[0].args.amount.toNumber());
 				return web3.eth.getBlockNumberPromise();
 			}).then( blockNumberReturned => {
 				blockNumber = blockNumberReturned;
@@ -54,6 +58,8 @@ contract('Remittance', function(accounts) {
 			
 			return contractInstance.withdrawFunds(pwd, {from: exchange1}).then( txObject => {
 				assert.strictEqual("0x01", txObject.receipt.status);
+				assert.strictEqual(exchange1, txObject.logs[0].args.beneficiary);
+				assert.strictEqual(100, txObject.logs[0].args.amount.toNumber());
 			});
 		});
 

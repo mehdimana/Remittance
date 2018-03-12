@@ -18,6 +18,9 @@ contract Remittance is Mortal {
     // bytes32 represents the hash of a password, uint the funds available for whom has the right password     
     mapping (bytes32 => RemittanceInstanceType) public funds;
     bool public disableRemmitance;
+    
+    event LogRemittance(address sender, address beneficiary, uint amount);
+    event LogWithdrawal(address beneficiary, uint amount);
 
     //empty constructor
     function Remittance() public { }
@@ -38,6 +41,7 @@ contract Remittance is Mortal {
         remittanceInstance.exchange = exchange;
         remittanceInstance.expiration = expirationInBlocks + block.number;
         funds[hash] = remittanceInstance;
+        LogRemittance(msg.sender, exchange, msg.value);
     }
     
     /**
@@ -72,6 +76,7 @@ contract Remittance is Mortal {
         
         funds[hash].ammount = 0; //prevent re-entrency
         msg.sender.transfer(toWithdraw);
+        LogWithdrawal(msg.sender, toWithdraw);
     }
     
     function calculateHash(string pwd) public pure returns(bytes32) {
