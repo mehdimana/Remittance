@@ -21,6 +21,7 @@ contract Remittance is Mortal {
     
     event LogRemittance(address sender, address beneficiary, uint amount);
     event LogWithdrawal(address beneficiary, uint amount);
+    event LogRemittanceEnabled(bool enabled);
 
     //empty constructor
     function Remittance() public { }
@@ -33,7 +34,8 @@ contract Remittance is Mortal {
         require(!disableRemmitance);
         require(msg.value > 0);
         require(exchange != address(0));
-        require(funds[hash].ammount == 0); //make sure NOT to overwrite an existing remittance with funds.
+        require(funds[hash].exchange == address(0)); //make sure this hash has never been used before (thus pwd unknown)
+                                                    //we use the exchange address that should be 0 if the row doess not exist.
         
         RemittanceInstanceType memory remittanceInstance;
         remittanceInstance.ammount += msg.value;
@@ -49,6 +51,7 @@ contract Remittance is Mortal {
      */
      function disableRemittance() public accessibleByOwnerOnly {
          disableRemmitance = true;
+         LogRemittanceEnabled(!disableRemmitance);
      }
 
     /**
@@ -56,6 +59,7 @@ contract Remittance is Mortal {
      */
      function enableRemittance() public accessibleByOwnerOnly {
          disableRemmitance = false;
+         LogRemittanceEnabled(!disableRemmitance);
      }    
     /**
      * allow to withdraw funds if the password hash matches a known hash
@@ -75,8 +79,8 @@ contract Remittance is Mortal {
         }
         
         funds[hash].ammount = 0; //prevent re-entrency
-        msg.sender.transfer(toWithdraw);
         LogWithdrawal(msg.sender, toWithdraw);
+        msg.sender.transfer(toWithdraw);
     }
     
     function calculateHash(string pwd) public pure returns(bytes32) {

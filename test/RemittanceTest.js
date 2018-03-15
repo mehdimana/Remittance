@@ -85,7 +85,10 @@ contract('Remittance', function(accounts) {
 				return contractInstance.withdrawFunds(pwd, {from: owner}); 
 			}).then( txObject => {
 				assert.strictEqual("0x01", txObject.receipt.status);
-			});
+				return web3.eth.getBalancePromise(contractInstance.address);
+			}).then( balance => {
+				assert.strictEqual(0, balance.toNumber(), "balance of the contract wrong");
+			})
 		});
 
 	});

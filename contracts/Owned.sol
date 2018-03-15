@@ -1,7 +1,7 @@
 pragma solidity ^0.4.19;
 
 contract Owned {
-    address owner;
+    address private owner;
     
     function Owned() public {
         owner = msg.sender;
@@ -12,26 +12,18 @@ contract Owned {
         require(owner == msg.sender);
         _;
     }
+    
+    function getOwner() public view returns(address ownerAddress) {
+        return owner;
+    }
+    
+    function setOwner(address newOwner) public accessibleByOwnerOnly {
+        owner = newOwner;
+    }
 }
 
 contract Mortal is Owned {
-    function kill() public {
-        require(msg.sender == owner);
-        selfdestruct(owner);
-    }
-}
-
-contract Expirable {
-    uint duration;
-    uint deadLine;
-    
-    function Expirable(uint durationInBlock) public {
-        duration = durationInBlock;
-        deadLine = block.number + duration;
-    }
-    
-    modifier expirable() {
-        require(deadLine < block.number);
-        _;
+    function kill() public accessibleByOwnerOnly {
+        selfdestruct(getOwner());
     }
 }
