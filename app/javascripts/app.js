@@ -70,7 +70,7 @@ const updateBalance = function(accountSelected) {
 const withdraw = function() {
   return Remittance.deployed()
          .then( deploy => {
-            return deploy.withdrawFunds($("input[name='pwd']").val(),
+            return deploy.withdrawFunds.sendTransaction($("input[name='pwd']").val(),
                                            {from: $("#account-select").val()});
          }).then(txObject => {
           if (txObject.receipt.status === "0x01") {
