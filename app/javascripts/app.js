@@ -21,6 +21,9 @@ Promise.promisifyAll(web3.version, { suffix: "Promise" });
 const Remittance = truffleContract(remittanceJson);
 Remittance.setProvider(web3.currentProvider);
 
+var logWithdrawalEvent; 
+
+
 window.addEventListener('load', function() {
     return web3.eth.getAccountsPromise()
         .then(accounts => {
@@ -36,6 +39,8 @@ window.addEventListener('load', function() {
                 $("#account-select").append($("<option></option>")
                                    .attr("value", accounts[i]).text(i + ": " + accounts[i]));
                 $("#exchange-select").append($("<option></option>")
+                                   .attr("value", accounts[i]).text(i + ": " + accounts[i]));
+                $("#hash-select").append($("<option></option>")
                                    .attr("value", accounts[i]).text(i + ": " + accounts[i]));
             }
             $("#account-select").change(function(){
@@ -56,9 +61,38 @@ window.addEventListener('load', function() {
         .then(() => $("#calculate-hash").click(calculateHash))
         .then(() => $("#create-remittance").click(createRemittance))      
         .then(() => $("#withdraw").click(withdraw))
+        .then(() => watchEvents())
         // Never let an error go unlogged.
         .catch(console.error);
 });
+
+const watchEvents = function() {
+  var deployed;
+  return Remittance.deployed()
+         .then( deploy => {
+          deployed = deploy;
+            return  deploy.LogWithdrawal({from: account});
+         }).then( event => {
+            watchEvent(event);
+            return deployed.LogRemittance({from: account});
+         }).then( event => {
+            watchEvent(event);
+            return deployed.LogRemittanceEnabled({from: account});
+         }).then( event => {
+            watchEvent(event);
+         });
+}
+
+const watchEvent = function(event) {
+   event.watch(function(err, result) {
+    if (err) {
+      console.log(err)
+      return;
+    }
+    console.log(result.event);
+    console.log(result.args);
+  })
+}
 
 const updateBalance = function(accountSelected) {
   return web3.eth.getBalancePromise(accountSelected)
@@ -72,15 +106,17 @@ const withdraw = function() {
          .then( deploy => {
             return deploy.withdrawFunds.sendTransaction($("input[name='pwd']").val(),
                                            {from: $("#account-select").val()});
-         }).then(txObject => {
-          if (txObject.receipt.status === "0x01") {
+         }).then(txHash => {
+          updateBalance($("#account-select").val());
+          return web3.eth.getTransactionReceiptPromise(txHash);
+        }).then(txObject => {
+          if (txObject.status === "0x01") {
             $("#status").html("withdrawal successsfuly.");
-            console.log(txObject.logs[0].args);
           } else {
             $("#status").html("error withdrawing.");
             console.error(txObject);
           }
-          updateBalance($("#account-select").val());
+          
          }).catch(console.error);
 }
 
@@ -108,7 +144,8 @@ const createRemittance = function() {
 const calculateHash = function() {
   return Remittance.deployed()
          .then( deploy => {
-            return deploy.calculateHash.call($("input[name='testHash']").val());
+          console.log("----")
+            return deploy.calculateHash.call($("input[name='testHash']").val(), $("#hash-select").val());
          }).then(hash => {
           $("#status").html(hash);
          }).catch(console.error);
@@ -158,68 +195,3 @@ const killContract = function() {
           updateBalance($("#account-select").val());
          }).catch(console.error);
 }
-/*
-const sendCoin = function() {
-    // Sometimes you have to force the gas amount to a value you know is enough because
-    // `web3.eth.estimateGas` may get it wrong.
-    const gas = 300000; let deployed;
-    // We return the whole promise chain so that other parts of the UI can be informed when
-    // it is done.
-    return Remittance.deployed()
-        .then(_deployed => {
-            deployed = _deployed;
-            // We simulate the real call and see whether this is likely to work.
-            // No point in wasting gas if we have a likely failure.
-            return _deployed.sendCoin.call(
-                $("input[name='recipient']").val(),
-                // Giving a string is fine
-                $("input[name='amount']").val(),
-                { from: window.account, gas: gas });
-        })
-        .then(success => {
-            if (!success) {
-                throw new Error("The transaction will fail anyway, not sending");
-            }
-            // Ok, we move onto the proper action.
-            // .sendTransaction so that we get the txHash immediately while it 
-            // is mined, as, in real life scenarios, that can take time of 
-            // course.
-            return deployed.sendCoin.sendTransaction(
-                $("input[name='recipient']").val(),
-                // Giving a string is fine
-                $("input[name='amount']").val(),
-                { from: window.account, gas: gas });
-        })
-        // We would be a proper `txObject` if we had not added `.sendTransaction` above.
-        // Oh well, more work is needed here for our user to have a nice UI.
-        .then(txHash => {
-            $("#status").html("Transaction on the way " + txHash);
-            // Now we wait for the tx to be mined. Typically, you would take this into another
-            // module, as in https://gist.github.com/xavierlepretre/88682e871f4ad07be4534ae560692ee6
-            const tryAgain = () => web3.eth.getTransactionReceiptPromise(txHash)
-                .then(receipt => receipt !== null ?
-                    receipt :
-                    // Let's hope we don't hit the max call stack depth
-                    Promise.delay(1000).then(tryAgain));
-            return tryAgain();
-        })
-        .then(receipt => {
-            if (receipt.logs.length == 0) {
-                console.error("Empty logs");
-                console.error(receipt);
-                $("#status").html("There was an error in the tx execution");
-            } else {
-                // Format the event nicely.
-                console.log(deployed.Transfer().formatter(receipt.logs[0]).args);
-                $("#status").html("Transfer executed");
-            }
-            // Make sure we update the UI.
-            return deployed.getBalance.call(window.account);
-        })
-        .then(balance => $("#balance").html(balance.toString(10)))
-        .catch(e => {
-            $("#status").html(e.toString());
-            console.error(e);
-        });
-};
-*/
