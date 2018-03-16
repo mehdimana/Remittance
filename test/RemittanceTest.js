@@ -17,24 +17,16 @@ contract('Remittance', function(accounts) {
 			})
 	})
 
-	it("test hash", () => {
-		var pwd = "12345678";
-		var hash = web3.sha3(pwd)
-		return Remittance.deployed().then( () => {
-			return contractInstance.calculateHash.call(pwd, {from: exchange1});
-		}).then(function(hashFromContract) {
-			//console.log(hash + "----" + hashFromContract);
-			assert.strictEqual(hash, hashFromContract, "hashes do not match");
-		});
-	})
-
 	describe("test withdrawal", () => {
 		var pwd = "123456789";
-		var hash = web3.sha3(pwd);
+		var hash;
 		var blockNumber;
 
 		beforeEach(function() {
 			return Remittance.deployed().then( () => {
+				return contractInstance.calculateHash(pwd, exchange1);
+			}).then(hashCalculatedByContract => {
+				hash = hashCalculatedByContract;
 				return contractInstance.createRemittance(hash, exchange1, 2, {from: owner, value: 100});
 			}).then(function(txObject) {
 				assert.strictEqual("0x01", txObject.receipt.status);
@@ -48,9 +40,8 @@ contract('Remittance', function(accounts) {
 				return contractInstance.funds(hash, {from: owner});
 			}).then(function(remittanceInstance) {
 				assert.strictEqual('100', remittanceInstance[0].toString(10), "funds not set properly after Remittance");
-				assert.strictEqual(exchange1, remittanceInstance[1], "exchange address not set properly after Remittance");
-				assert.strictEqual(2+blockNumber, remittanceInstance[2].toNumber(), "expiration not set properly after Remittance");
-				assert.strictEqual(owner, remittanceInstance[3], "owner not set properly after Remittance");
+				assert.strictEqual(2+blockNumber, remittanceInstance[1].toNumber(), "expiration not set properly after Remittance");
+				assert.strictEqual(owner, remittanceInstance[2], "owner not set properly after Remittance");
 			})
 		})
 
@@ -73,7 +64,7 @@ contract('Remittance', function(accounts) {
 		});
 
 		it("should not allow owner to retreive funds before deadline", () => {
-			return contractInstance.withdrawFunds(pwd, {from: owner}).catch( error => {
+			return contractInstance.recoverFunds(hash, {from: owner}).catch( error => {
 				// ok
 			});
 		});
@@ -82,7 +73,7 @@ contract('Remittance', function(accounts) {
 			return contractInstance.enableRemittance({from: owner}).then(() => { //create transaction to go over deadline
 				return contractInstance.enableRemittance({from: owner}); //create transaction to go over deadline
 			}).then( () => {
-				return contractInstance.withdrawFunds(pwd, {from: owner}); 
+				return contractInstance.recoverFunds(hash, {from: owner}); 
 			}).then( txObject => {
 				assert.strictEqual("0x01", txObject.receipt.status);
 				return web3.eth.getBalancePromise(contractInstance.address);
@@ -93,9 +84,9 @@ contract('Remittance', function(accounts) {
 
 	});
 
-	describe("remittance enablement/dissablement", function() {
+	describe("remittance enablement/disablement", function() {
 		var pwd = "123456789";
-		var hash = web3.sha3(pwd);
+		var hash = web3.sha3(pwd, exchange1);
 
 		it ("should disable properly", () => {			
 			return contractInstance.disableRemittance({from: owner}).then(() => { 
@@ -109,7 +100,7 @@ contract('Remittance', function(accounts) {
 
 		it ("should enable properly", () => {
 			var pwd = "123456789";
-			var hash = web3.sha3(pwd);
+			var hash = web3.sha3(pwd, exchange1);
 			return contractInstance.disableRemittance({from: owner}).then(() => { 
 				return contractInstance.enableRemittance({from: owner});
 			}).then(() => {
