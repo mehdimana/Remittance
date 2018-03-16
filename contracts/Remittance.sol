@@ -40,7 +40,7 @@ contract Remittance is Mortal {
                                                     //we use the owner address that should be 0 if the row doess not exist.
         
         RemittanceInstanceType memory remittanceInstance;
-        remittanceInstance.ammount += msg.value;
+        remittanceInstance.ammount = msg.value;
         remittanceInstance.owner = msg.sender;
         remittanceInstance.expiration = expirationInBlocks + block.number;
         funds[hash] = remittanceInstance;
@@ -52,7 +52,7 @@ contract Remittance is Mortal {
      */
      function disableRemittance() public accessibleByOwnerOnly {
          disableRemmitance = true;
-         LogRemittanceEnabled(!disableRemmitance);
+         LogRemittanceEnabled(false);
      }
 
     /**
@@ -60,7 +60,7 @@ contract Remittance is Mortal {
      */
      function enableRemittance() public accessibleByOwnerOnly {
          disableRemmitance = false;
-         LogRemittanceEnabled(!disableRemmitance);
+         LogRemittanceEnabled(true);
      }    
      
     /**
