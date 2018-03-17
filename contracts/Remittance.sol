@@ -99,7 +99,7 @@ contract Remittance is Mortal {
         msg.sender.transfer(toWithdraw);
     }
     
-    function calculateHash(bytes32 pwd, address exchange) public pure returns(bytes32) {
-        return keccak256(pwd, exchange);
+    function calculateHash(bytes32 pwd, address exchange) public view returns(bytes32) {
+        return keccak256(this, pwd, exchange);
     }
 }
